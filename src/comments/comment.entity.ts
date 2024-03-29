@@ -25,15 +25,15 @@ export class Comment{
   content: string
 
 
-  @ManyToOne(type => Comment, comment => comment.replies, { nullable: true })
+  @ManyToOne(() => Comment, comment => comment.replies, { nullable: true })
   @JoinColumn({ name: 'refererOnId' })
   refererOn: Comment | null
 
-  @OneToMany(type => Comment, comment => comment.refererOn, { cascade: true })
+  @OneToMany(() => Comment, comment => comment.refererOn, { cascade: true })
   replies: Comment[] | null
 
   @Column({ nullable: true })
-  imageURl: string
+  fileName: string
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date

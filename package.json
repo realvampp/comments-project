@@ -29,6 +29,7 @@
     "@nestjs/core": "^10.0.0",
     "@nestjs/platform-express": "^10.0.0",
     "@nestjs/platform-socket.io": "^10.3.3",
+    "@nestjs/serve-static": "^4.0.1",
     "@nestjs/typeorm": "^10.0.2",
     "@nestjs/websockets": "^10.3.3",
     "aws-sdk": "^2.1551.0",
@@ -42,6 +43,8 @@
     "passport-local": "^1.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
+    "sharp": "^0.33.3",
+    "socket.io-client": "^4.7.5",
     "typeorm": "^0.3.20",
     "typeorm-extension": "^3.5.0"
   },
