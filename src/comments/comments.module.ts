@@ -6,9 +6,10 @@ import { CommentsService } from './comments.service'
 import { Comment } from "./comment.entity"
 import { ImagesController } from './imagesController';
 import { MulterConfigService } from '../config/multer-config.service'
+import { User } from '../auth/entities/user.entity'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Comment]), MulterModule.registerAsync({
+  imports: [TypeOrmModule.forFeature([Comment, User]), MulterModule.registerAsync({
     useClass: MulterConfigService
   })],
   controllers: [ImagesController],

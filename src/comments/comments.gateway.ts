@@ -2,25 +2,34 @@ import {
   ConnectedSocket,
   MessageBody,
   OnGatewayConnection,
+  OnGatewayInit,
   SubscribeMessage,
   WebSocketGateway,
-  WebSocketServer
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { BadRequestException, Logger, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common'
+import { BadRequestException, Logger, UseFilters, UseGuards } from '@nestjs/common'
 import { Server, Socket } from 'socket.io';
 import { CommentDto } from './comment.dto'
 import { CommentsService } from './comments.service'
-import { OrderBy, OrderFor } from '../common/types'
-import { CustomWsExceptionFilter } from '../common/CustomWsExceptionFilter'
+import { Client, OrderBy, OrderFor } from '../common/types'
+import { CustomExceptionFilter } from '../common/CustomExceptionFilter'
+import { socketAuthMiddleware } from '../auth/ws-jwt/ws.mw'
+import { WsJwtGuard } from '../auth/ws-jwt/ws-jwt.guard'
 
-
-@UseFilters(new CustomWsExceptionFilter())
+@UseGuards(WsJwtGuard)
+@UseFilters(new CustomExceptionFilter())
 @WebSocketGateway({namespace: 'comments', cors: true})
-export class CommentsGateway implements OnGatewayConnection {
+export class CommentsGateway implements OnGatewayConnection, OnGatewayInit {
   @WebSocketServer()
   server: Server;
 
   constructor(private commentService: CommentsService) {
+  }
+
+
+  afterInit(client: Socket) {
+    client.use(socketAuthMiddleware as any);
+    Logger.log('Init')
   }
 
   async handleConnection(client: Socket) {
@@ -29,29 +38,25 @@ export class CommentsGateway implements OnGatewayConnection {
     client.emit('connectionResponse', comments)
   }
 
-// @UseGuards(WsJwtGuard)
-  @UsePipes(new ValidationPipe())
+
+  // @UsePipes(new ValidationPipe())
   @SubscribeMessage('publishComment')
-  async publishComment(@ConnectedSocket() client: Socket, @MessageBody() data: CommentDto) {
+  async publishComment(@ConnectedSocket() client: Client, @MessageBody() data: CommentDto) {
     // console.log('data:', data)
     if (!this.commentService.validateHTMLTags(data.content)) throw new BadRequestException('HTML tags is incorrect')
-    try {
-      return await this.commentService.create(data)
-    } catch (e) {
-      console.log('catch error:', e.message)
-      throw new BadRequestException(e)
-    }
+
+    let comment = await this.commentService.create(client.payload.id, data)
+    this.server.emit('newComment', comment)
+    return comment
   }
 
-  @SubscribeMessage('giveRoots')
-  async getAllComments(@ConnectedSocket() client: Socket, @MessageBody('orderFor') orderFor: OrderFor = 'createdAt', @MessageBody('orderBy') orderBy: OrderBy = 'DESC') {
-    let comments = await this.commentService.findRoots(orderFor, orderBy)
-    console.log('comments:', comments)
-    return comments
+  @SubscribeMessage('getRoots')
+  getAllComments(@ConnectedSocket() client: Client, @MessageBody('orderFor') orderFor: OrderFor = 'createdAt', @MessageBody('orderBy') orderBy: OrderBy = 'DESC') {
+    return this.commentService.findRoots(orderFor, orderBy)
   }
 
-  @SubscribeMessage('giveCommentsByParent')
-  async getCommentsByParent(@ConnectedSocket() client: Socket, @MessageBody('id') parentId: number) {
+  @SubscribeMessage('getCommentsByParent')
+  async getCommentsByParent(@ConnectedSocket() client: Client, @MessageBody('id') parentId: number) {
     return this.commentService.findByParent(parentId)
   }
 }

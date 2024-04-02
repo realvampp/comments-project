@@ -1,24 +1,25 @@
 import { BadRequestException, HttpException, Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { WsException } from '@nestjs/websockets'
 import { IsNull, Repository } from 'typeorm'
 import { CommentDto } from './comment.dto'
 import { Comment } from './comment.entity'
 import { OrderBy, OrderFor } from '../common/types'
+import { User } from '../auth/entities/user.entity'
 
 @Injectable()
 export class CommentsService {
-  constructor(@InjectRepository(Comment) private commentRepository: Repository<Comment>) {
+  constructor(@InjectRepository(Comment) private commentRepository: Repository<Comment>, @InjectRepository(User) private userRepository: Repository<User>) {
   }
 
-  async create(comment: CommentDto) {
+  async create(userId: number, comment: CommentDto) {
     try {
+      let user = await this.userRepository.findOneBy({id: userId})
+      if (!user) throw new BadRequestException('User not found')
+
       if (typeof comment.refererOn === 'number')
         comment.refererOn = await this.commentRepository.findOneBy({id: comment.refererOn})
 
-      let createdComment = await this.commentRepository.save(comment as Comment)
-      console.log('createdComment:', createdComment)
-      return createdComment
+      return await this.commentRepository.save({...comment, user} as Comment)
     } catch (e) {
       console.log('catch error:', e.message)
       throw new BadRequestException(e)
@@ -33,7 +34,7 @@ export class CommentsService {
 
     comment.fileName = fileName
 
-    return await this.commentRepository.save(comment)
+    return this.commentRepository.save(comment)
   }
 
   async findRoots(orderFor: OrderFor = 'createdAt', orderBy: OrderBy = 'DESC') {
@@ -41,12 +42,12 @@ export class CommentsService {
       return await this.commentRepository.find({
         relations: ['replies'],
         where: {
-          refererOn: IsNull()
+          refererOn: IsNull(),
         },
         order: {
-          [orderFor]: orderBy
+          [orderFor]: orderBy,
         },
-        take: 25
+        take: 25,
       })
     } catch (e) {
       console.log('catch error:', e.message)
@@ -56,12 +57,12 @@ export class CommentsService {
 
   async findByParent(parentId: number) {
     // console.log('parentId:', parentId)
-    if (!parentId) throw new WsException('Id not defined')
+    if (!parentId) throw new BadRequestException('Id not defined')
 
     let parent = await this.commentRepository.findOne({where: {id: parentId}})
     // console.log('parent:', parent)
 
-    if (!parent) throw new WsException('Parent not found')
+    if (!parent) throw new BadRequestException('Parent not found')
 
     return this.commentRepository.find({where: {refererOn: parent}, relations: ['replies']})
   }

@@ -5,7 +5,7 @@ import { CommentsService } from './comments.service'
 
 @Controller('api/images')
 export class ImagesController {
-  constructor(private multerConfigService: MulterConfigService, private commentService: CommentsService) {
+  constructor(private multerConfigService: MulterConfigService) {
   }
 
   @Post()
@@ -13,7 +13,6 @@ export class ImagesController {
   async uploadFile(@Body('commentId') commentId: string, @UploadedFile() file: Express.Multer.File) {
     if (!commentId || !file) throw new BadRequestException('commentId or file not defined')
     let fileName = await this.multerConfigService.savingFile(file)
-    await this.commentService.addFile(Number(commentId), fileName)
 
     return { fileName }
   }

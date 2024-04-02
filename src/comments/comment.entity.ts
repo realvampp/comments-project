@@ -1,40 +1,28 @@
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-} from 'typeorm'
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, } from 'typeorm'
+import { User } from '../auth/entities/user.entity'
 
 @Entity()
-export class Comment{
+export class Comment {
   @PrimaryGeneratedColumn()
   id: number
 
-  @Column()
-  username: string
-
-  @Column()
-  email: string
-
-  @Column()
-  homepage: string
+  @ManyToOne(()=> User, user => user.comments)
+  @JoinColumn({name: 'userId'})
+  user: User
 
   @Column()
   content: string
 
-
-  @ManyToOne(() => Comment, comment => comment.replies, { nullable: true })
-  @JoinColumn({ name: 'refererOnId' })
+  @ManyToOne(() => Comment, comment => comment.replies, {nullable: true})
+  @JoinColumn({name: 'refererOnId'})
   refererOn: Comment | null
 
-  @OneToMany(() => Comment, comment => comment.refererOn, { cascade: true })
+  @OneToMany(() => Comment, comment => comment.refererOn, {cascade: true})
   replies: Comment[] | null
 
-  @Column({ nullable: true })
+  @Column({nullable: true})
   fileName: string
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @Column({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP'})
   createdAt: Date
 }
