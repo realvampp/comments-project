@@ -9,25 +9,19 @@ import * as fs from 'fs'
 export class MulterConfigService implements MulterOptionsFactory {
   createMulterOptions(): Promise<MulterModuleOptions> | MulterModuleOptions {
     return {
-      // storage: diskStorage({
-      //   destination: './uploads',
-      //   filename: (req, file, cb) => {
-      //     console.log(file)
-      //     const extension = path.extname(file.originalname)
-      //     cb(null, `${Date.now()+extension}`)
-      //   }
-      // }),
       storage: memoryStorage(),
       dest: './uploads',
       fileFilter: (req, file, callback) => {
         const isImage = file.mimetype.startsWith('image/')
         const isText = file.mimetype.startsWith('text/')
         if (isImage || isText) return callback(null, true)
-        else throw new BadRequestException('Only image and text files are allowed!')
+        else {
+          return callback(new BadRequestException('Only image and text files are allowed!'), false)
+        }
       },
       limits: {
-        fileSize: 100 * 1024
-      }
+        fileSize: 100 * 1024,
+      },
     }
   }
 

@@ -7,16 +7,16 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { BadRequestException, Logger, UseFilters, UseGuards } from '@nestjs/common'
+import { BadRequestException, Logger, UseFilters, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common'
 import { Server, Socket } from 'socket.io';
 import { CommentDto } from './comment.dto'
 import { CommentsService } from './comments.service'
 import { Client, OrderBy, OrderFor } from '../common/types'
 import { CustomExceptionFilter } from '../common/CustomExceptionFilter'
 import { socketAuthMiddleware } from '../auth/ws-jwt/ws.mw'
-import { WsJwtGuard } from '../auth/ws-jwt/ws-jwt.guard'
+import { JwtGuard } from '../auth/ws-jwt/jwt.guard'
 
-@UseGuards(WsJwtGuard)
+@UseGuards(JwtGuard)
 @UseFilters(new CustomExceptionFilter())
 @WebSocketGateway({namespace: 'comments', cors: true})
 export class CommentsGateway implements OnGatewayConnection, OnGatewayInit {
@@ -39,7 +39,7 @@ export class CommentsGateway implements OnGatewayConnection, OnGatewayInit {
   }
 
 
-  // @UsePipes(new ValidationPipe())
+  @UsePipes(new ValidationPipe())
   @SubscribeMessage('publishComment')
   async publishComment(@ConnectedSocket() client: Client, @MessageBody() data: CommentDto) {
     // console.log('data:', data)

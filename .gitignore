@@ -1,8 +1,8 @@
+.env.my
 .env
 example.json
 \!Minds.txt
-/uploads
-test.html
+/uploads/
 
 # compiled output
 /dist

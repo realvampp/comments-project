@@ -1,0 +1,39 @@
+version: '3'
+
+services :
+
+  mysql:
+    container_name: comments.mysql
+    image: mysql:8.0
+    env_file: ../.env
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DEFAULT_AUTHENTICATION_PLUGIN=caching_sha2_password
+    command: --init-file /data/application/init.sql
+    ports:
+      - "3666:3306"
+    volumes:
+      - comments-mysql:/var/lib/mysql
+      - ./init.sql:/data/application/init.sql
+    healthcheck:
+      test: mysqladmin ping -h localhost -P 3666 -u root --password=root
+    restart: always
+
+  app:
+    container_name: comments.app
+    env_file:
+      - ../.env
+    build:
+      context: ../
+      dockerfile: .docker/Dockerfile
+    environment:
+      - NODE_OPTIONS=--max_old_space_size=8192
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  comments-mysql:
+    driver: local
