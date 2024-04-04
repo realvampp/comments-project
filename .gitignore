@@ -2,7 +2,7 @@
 .env
 example.json
 \!Minds.txt
-/uploads/
+/uploads
 
 # compiled output
 /dist

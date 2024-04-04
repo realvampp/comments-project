@@ -30,6 +30,9 @@ export class MulterConfigService implements MulterOptionsFactory {
     const fileName = `${Date.now() + path.extname(file.originalname)}`
     const filePath = `./uploads/${fileName}`
 
+    if (!fs.existsSync('./uploads'))
+      fs.mkdirSync('./uploads')
+
     if (file.mimetype.startsWith('image/'))
       await sharp(buffer).resize({
         width: 320,
